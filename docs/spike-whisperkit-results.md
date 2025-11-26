@@ -60,7 +60,7 @@ let text = results.map { $0.text }.joined(separator: " ")
 
 ## Accuracy Results
 
-### Medical Terminology Test
+### Medical Terminology Test (Human Voice)
 
 Audio: "The patient presents with sacroiliac joint dysfunction and sternocleidomastoid tension. Palpation reveals C5, C6, facet involvement."
 
@@ -75,6 +75,24 @@ Audio: "The patient presents with sacroiliac joint dysfunction and sternocleidom
 | dysfunction | ✅ | ✅ |
 
 **Score: WhisperKit 5/7 = Apple Speech 5/7**
+
+### Closed-Loop Testing (TTS Generated Audio)
+
+Comprehensive testing using fixture-based text-to-speech audio with accuracy validation:
+
+| Fixture | Duration | Word Accuracy | Key Terms | Transcription Time |
+|---------|----------|---------------|-----------|-------------------|
+| Small Basic | ~3s | 71.4% | 2/2 (100%) | 1.16s |
+| Medium Chiropractic | ~16s | 77.1% | 7/8 (87.5%) | 1.67s |
+| Diagnoses | ~17s | 70.4% | 10/13 (76.9%) | 1.74s |
+| Anatomical Terms | ~18s | 73.0% | 8/10 (80.0%) | 1.73s |
+| **Vertebral Levels** | ~23s | **87.5%** | **18/18 (100%)** | 1.86s |
+| Large SOAP Note | ~90s | 65.6% | 10/12 (83.3%) | 2.98s |
+
+**Key Findings:**
+- **Vertebral levels (C1-C7, T1-T12, L1-S1)**: 100% accuracy
+- **90-second SOAP note**: No cutoff, transcribed in under 3 seconds
+- **Challenging terms**: sternocleidomastoid, radiculopathy, spondylolisthesis
 
 ### Key Insight
 
@@ -95,12 +113,19 @@ WhisperKit matches Apple's on-device speech recognition quality while providing:
 - `Views/TranscriptionComparisonView.swift` - Side-by-side comparison UI
 
 ### Test Code
-- `VoiceTranscriptionServiceTests.swift` - Comprehensive test suites:
+- `VoiceTranscriptionServiceTests.swift` - Core test suites:
   - `VoiceTranscriptionServiceInitTests`
   - `VoiceTranscriptionServiceModelTests`
   - `VoiceTranscriptionServiceTranscriptionTests`
   - `MedicalTerminologyTests`
   - `TranscriptionComparisonTests`
+- `ClosedLoopTranscriptionTests.swift` - Fixture-based accuracy tests
+- `AudioFixtures.swift` - Fixture loader with accuracy calculation
+
+### Test Fixtures
+- `fixtures/transcripts/*.txt` - Source text for audio generation
+- `fixtures/audio/*.m4a` - Generated audio files
+- `fixtures/generate_audio.sh` - Script to regenerate audio from text
 
 ---
 
