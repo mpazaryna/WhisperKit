@@ -1,13 +1,13 @@
 {
-  "originHash" : "e843284a09b9d7fb8d0032fe1a3fd1fbd38f28ea54d42a39ccbe396af16d225d",
+  "originHash" : "e4e576a75306817eebe6d5188d0e41a2c00d7264532dce7a437079892b87ae42",
   "pins" : [
     {
       "identity" : "swift-argument-parser",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-argument-parser.git",
       "state" : {
-        "revision" : "cdd0ef3755280949551dc26dee5de9ddeda89f54",
-        "version" : "1.6.2"
+        "revision" : "c5d11a805e765f52ba34ec7284bd4fcd6ba68615",
+        "version" : "1.7.0"
       }
     },
     {
@@ -24,8 +24,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/huggingface/swift-jinja.git",
       "state" : {
-        "revision" : "06a511d5adab5a812852ff972e65702a24b8ce30",
-        "version" : "2.2.0"
+        "revision" : "ba2364165002abe8f4f3992d74a7b547c635638e",
+        "version" : "2.2.1"
       }
     },
     {
@@ -33,8 +33,17 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/huggingface/swift-transformers.git",
       "state" : {
-        "revision" : "d363e83a77bafe144808a3d01556139fe67cd8bc",
-        "version" : "1.1.2"
+        "revision" : "573e5c9036c2f136b3a8a071da8e8907322403d0",
+        "version" : "1.1.6"
+      }
+    },
+    {
+      "identity" : "voicekit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mpazaryna/VoiceKit",
+      "state" : {
+        "branch" : "main",
+        "revision" : "3b4f8715befcf0c39e59ec907b94ca5dfdc051b3"
       }
     },
     {

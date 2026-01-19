@@ -46,27 +46,25 @@ Current Flow:
 Manual text → Apple Intelligence → SOAP generation → MLX processors
 
 Proposed Flow:
-Audio recording → WhisperKit transcription → Apple Intelligence → SOAP → MLX
+Audio recording → VoiceKit → WhisperKit transcription → Apple Intelligence → SOAP → MLX
 ```
 
-### Service Architecture
+### Package Architecture
+
+The app uses **VoiceKit** (`github.com/mpazaryna/VoiceKit`) as a facade package that wraps WhisperKit. This provides:
+- Clean abstraction layer between app and transcription engine
+- Ability to swap implementations without app changes
+- Shared types (`VoiceTranscriptionService`, `TranscriptionResult`, `VoiceTranscriptionError`)
 
 ```swift
-// Features/Notes/Services/VoiceTranscriptionService.swift
-import WhisperKit
+// App imports VoiceKit, not WhisperKit directly
+import VoiceKit
 
-class VoiceTranscriptionService {
-    private var whisperKit: WhisperKit?
-    
-    func initialize() async throws {
-        whisperKit = try await WhisperKit(model: "base-en")
-    }
-    
-    func transcribe(audioPath: String) async throws -> String {
-        let result = try await whisperKit?.transcribe(audioPath: audioPath)
-        return result?.text ?? ""
-    }
-}
+// VoiceTranscriptionService provided by VoiceKit package
+let service = VoiceTranscriptionService()
+try await service.loadModel()
+let result = try await service.transcribe(audioURL: audioURL)
+print(result.text)
 ```
 
 ### Model Selection
@@ -85,11 +83,11 @@ class VoiceTranscriptionService {
 
 ## Implementation Plan
 
-### Phase 1: Basic Integration (Day 1)
+### Phase 1: Basic Integration (Day 1) ✅ COMPLETED
 
 **Tasks:**
-1. Add WhisperKit via Swift Package Manager
-2. Create `VoiceTranscriptionService.swift`
+1. ✅ Add VoiceKit package via Swift Package Manager
+2. ✅ VoiceKit provides `VoiceTranscriptionService` (no app-level service needed)
 3. Add model preloading to `MLXPreloader.swift`
 4. Basic UI: record button in SOAP generation view
 5. Wire transcription → text field population
@@ -124,9 +122,11 @@ Based on user feedback:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/argmaxinc/WhisperKit", from: "0.15.0")
+    .package(url: "https://github.com/mpazaryna/VoiceKit", from: "1.0.0")
 ]
 ```
+
+> **Note**: VoiceKit internally depends on WhisperKit. The app only needs to import VoiceKit.
 
 ### Model Loading Strategy
 
@@ -198,6 +198,7 @@ whisperKit.setCustomVocabulary(chiropracticTerms)
 
 ## References
 
+- **VoiceKit Package**: https://github.com/mpazaryna/VoiceKit (facade wrapping WhisperKit)
 - **WhisperKit GitHub**: https://github.com/argmaxinc/WhisperKit
 - **ModMed Scribe Case Study**: https://www.argmaxinc.com/blog/modmed-scribe
 - **WhisperKit Documentation**: https://swiftpackageindex.com/argmaxinc/WhisperKit/main/documentation/whisperkit
@@ -206,10 +207,10 @@ whisperKit.setCustomVocabulary(chiropracticTerms)
 
 ## Priority & Effort
 
-**Status**: Proposed  
-**Priority**: High (TestFlight Blocker)  
-**Estimated Effort**: 1-2 days  
-**Dependencies**: None
+**Status**: In Progress (VoiceKit package integrated)
+**Priority**: High (TestFlight Blocker)
+**Estimated Effort**: 1-2 days
+**Dependencies**: VoiceKit package (`github.com/mpazaryna/VoiceKit`)
 
 ---
 

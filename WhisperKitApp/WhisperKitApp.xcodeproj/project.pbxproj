@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		61CB77E92ED641020066AB23 /* WhisperKit in Frameworks */ = {isa = PBXBuildFile; productRef = 61CB77E82ED641020066AB23 /* WhisperKit */; };
+		61CB77E92ED641020066AB23 /* VoiceKit in Frameworks */ = {isa = PBXBuildFile; productRef = 61CB77E82ED641020066AB23 /* VoiceKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -56,7 +56,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				61CB77E92ED641020066AB23 /* WhisperKit in Frameworks */,
+				61CB77E92ED641020066AB23 /* VoiceKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -117,7 +117,7 @@
 			);
 			name = WhisperKitApp;
 			packageProductDependencies = (
-				61CB77E82ED641020066AB23 /* WhisperKit */,
+				61CB77E82ED641020066AB23 /* VoiceKit */,
 			);
 			productName = WhisperKitApp;
 			productReference = 61CB77BB2ED640DC0066AB23 /* WhisperKitApp.app */;
@@ -202,7 +202,7 @@
 			mainGroup = 61CB77B22ED640DC0066AB23;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				61CB77E72ED641020066AB23 /* XCRemoteSwiftPackageReference "WhisperKit" */,
+				61CB77E72ED641020066AB23 /* XCRemoteSwiftPackageReference "VoiceKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 61CB77BC2ED640DC0066AB23 /* Products */;
@@ -654,21 +654,21 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		61CB77E72ED641020066AB23 /* XCRemoteSwiftPackageReference "WhisperKit" */ = {
+		61CB77E72ED641020066AB23 /* XCRemoteSwiftPackageReference "VoiceKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/argmaxinc/WhisperKit";
+			repositoryURL = "https://github.com/mpazaryna/VoiceKit";
 			requirement = {
-				kind = exactVersion;
-				version = 0.15.0;
+				branch = main;
+				kind = branch;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		61CB77E82ED641020066AB23 /* WhisperKit */ = {
+		61CB77E82ED641020066AB23 /* VoiceKit */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 61CB77E72ED641020066AB23 /* XCRemoteSwiftPackageReference "WhisperKit" */;
-			productName = WhisperKit;
+			package = 61CB77E72ED641020066AB23 /* XCRemoteSwiftPackageReference "VoiceKit" */;
+			productName = VoiceKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

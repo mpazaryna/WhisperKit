@@ -7,6 +7,7 @@
 
 import Speech
 import SwiftUI
+import VoiceKit
 
 struct TranscriptionComparisonView: View {
 
@@ -193,7 +194,8 @@ struct TranscriptionComparisonView: View {
 
     private func transcribeWithWhisper(url: URL) async -> String {
         do {
-            return try await whisperService.transcribe(audioURL: url)
+            let result = try await whisperService.transcribe(audioURL: url)
+            return result.text
         } catch {
             return "Error: \(error.localizedDescription)"
         }
