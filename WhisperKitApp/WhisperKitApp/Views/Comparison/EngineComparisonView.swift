@@ -23,6 +23,14 @@ struct EngineComparisonView: View {
     @State private var finalTranscriptionTime: TimeInterval?
     @State private var timer: Timer?
 
+    // Individual engine timing
+    @State private var whisperTime: TimeInterval?
+    @State private var appleTime: TimeInterval?
+
+    // Audio file metrics
+    @State private var audioFileSize: Int64?
+    @State private var audioFilePath: String?
+
     var body: some View {
         VStack(spacing: 24) {
             headerSection
@@ -51,11 +59,17 @@ struct EngineComparisonView: View {
             if appState.isModelLoading {
                 HStack {
                     ProgressView()
-                    Text("Loading WhisperKit model...")
+                    Text("Loading model...")
                         .foregroundStyle(.secondary)
                 }
-            } else if appState.isModelLoaded {
-                Label("Model Ready", systemImage: "checkmark.circle.fill")
+            } else if appState.isWarmingUp {
+                HStack {
+                    ProgressView()
+                    Text("Warming up...")
+                        .foregroundStyle(.secondary)
+                }
+            } else if appState.isReady {
+                Label(appState.modelStatusText, systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
             } else if let error = appState.modelError {
                 Text(error)
@@ -83,7 +97,7 @@ struct EngineComparisonView: View {
                 .foregroundStyle(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
-            .disabled(!appState.isModelLoaded || isTranscribing)
+            .disabled(!appState.isReady || isTranscribing)
 
             if appState.recorder.isRecording {
                 HStack {
@@ -120,8 +134,22 @@ struct EngineComparisonView: View {
 
     private var resultsSection: some View {
         VStack(spacing: 16) {
+            // Audio file info
+            if let size = audioFileSize {
+                HStack(spacing: 16) {
+                    Label(formatFileSize(size), systemImage: "doc.fill")
+                    if let path = audioFilePath {
+                        Text(path)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            }
+
             if let time = finalTranscriptionTime {
-                Text(String(format: "Transcribed in %.1f seconds", time))
+                Text(String(format: "Total time: %.2f seconds", time))
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
@@ -131,23 +159,49 @@ struct EngineComparisonView: View {
                     resultCard(
                         title: "WhisperKit",
                         icon: "waveform",
-                        result: whisperResult
+                        result: whisperResult,
+                        time: whisperTime
                     )
 
                     resultCard(
                         title: "Apple Speech",
                         icon: "apple.logo",
-                        result: appleResult
+                        result: appleResult,
+                        time: appleTime
                     )
                 }
             }
         }
     }
 
-    private func resultCard(title: String, icon: String, result: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label(title, systemImage: icon)
-                .font(.headline)
+    private func resultCard(title: String, icon: String, result: String, time: TimeInterval?) -> some View {
+        let wordCount = result.split(separator: " ").count
+        let charCount = result.count
+        let wordsPerSecond = time.map { wordCount > 0 && $0 > 0 ? Double(wordCount) / $0 : 0 }
+
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Label(title, systemImage: icon)
+                    .font(.headline)
+                Spacer()
+                if let time {
+                    Text(String(format: "%.2fs", time))
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(time > 10 ? .red : (time > 5 ? .orange : .green))
+                }
+            }
+
+            // Metrics row
+            if !result.isEmpty && !result.starts(with: "Error") && !result.starts(with: "Not authorized") {
+                HStack(spacing: 12) {
+                    metricBadge(value: "\(wordCount)", label: "words")
+                    metricBadge(value: "\(charCount)", label: "chars")
+                    if let wps = wordsPerSecond, wps > 0 {
+                        metricBadge(value: String(format: "%.1f", wps), label: "w/s")
+                    }
+                }
+                .font(.caption2)
+            }
 
             Text(result.isEmpty ? "No result" : result)
                 .font(.body)
@@ -158,6 +212,28 @@ struct EngineComparisonView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 8))
         }
         .frame(maxWidth: .infinity)
+    }
+
+    private func metricBadge(value: String, label: String) -> some View {
+        HStack(spacing: 2) {
+            Text(value)
+                .fontWeight(.semibold)
+            Text(label)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 2)
+        .background(Color.blue.opacity(0.1))
+        .clipShape(Capsule())
+    }
+
+    private func formatFileSize(_ bytes: Int64) -> String {
+        let kb = Double(bytes) / 1024
+        if kb < 1024 {
+            return String(format: "%.1f KB", kb)
+        } else {
+            return String(format: "%.1f MB", kb / 1024)
+        }
     }
 
     // MARK: - Actions
@@ -175,6 +251,10 @@ struct EngineComparisonView: View {
         whisperResult = ""
         appleResult = ""
         finalTranscriptionTime = nil
+        whisperTime = nil
+        appleTime = nil
+        audioFileSize = nil
+        audioFilePath = nil
 
         do {
             try await appState.recorder.startRecording()
@@ -188,6 +268,13 @@ struct EngineComparisonView: View {
             errorMessage = "No recording available"
             return
         }
+
+        // Capture audio file info
+        if let attrs = try? FileManager.default.attributesOfItem(atPath: audioURL.path),
+           let size = attrs[.size] as? Int64 {
+            audioFileSize = size
+        }
+        audioFilePath = audioURL.lastPathComponent
 
         isTranscribing = true
         startTimer()
@@ -229,6 +316,9 @@ struct EngineComparisonView: View {
     private func transcribeWithWhisper(url: URL) async -> String {
         do {
             let result = try await appState.voiceService.transcribe(audioURL: url)
+            await MainActor.run {
+                whisperTime = result.duration
+            }
             return result.text
         } catch {
             return "Error: \(error.localizedDescription)"
@@ -236,14 +326,25 @@ struct EngineComparisonView: View {
     }
 
     private func transcribeWithApple(url: URL) async -> String {
+        let start = Date()
         let status = await appState.appleService.requestAuthorization()
         guard status == .authorized else {
+            await MainActor.run {
+                appleTime = Date().timeIntervalSince(start)
+            }
             return "Not authorized"
         }
 
         do {
-            return try await appState.appleService.transcribe(audioURL: url)
+            let result = try await appState.appleService.transcribe(audioURL: url)
+            await MainActor.run {
+                appleTime = Date().timeIntervalSince(start)
+            }
+            return result
         } catch {
+            await MainActor.run {
+                appleTime = Date().timeIntervalSince(start)
+            }
             return "Error: \(error.localizedDescription)"
         }
     }

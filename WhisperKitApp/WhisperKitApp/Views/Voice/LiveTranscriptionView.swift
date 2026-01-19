@@ -20,6 +20,7 @@ struct LiveTranscriptionView: View {
     @State private var transcriptionStartTime: Date?
     @State private var elapsedTime: TimeInterval = 0
     @State private var finalTranscriptionTime: TimeInterval?
+    @State private var actualWhisperKitTime: TimeInterval?
     @State private var timer: Timer?
 
     var body: some View {
@@ -52,10 +53,10 @@ struct LiveTranscriptionView: View {
 
     private var modelStatus: some View {
         HStack {
-            if appState.isModelLoading {
+            if appState.isModelLoading || appState.isWarmingUp {
                 ProgressView()
                     .controlSize(.small)
-            } else if appState.isModelLoaded {
+            } else if appState.isReady {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
             } else {
@@ -87,7 +88,7 @@ struct LiveTranscriptionView: View {
                 .foregroundStyle(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
-            .disabled(!appState.isModelLoaded || isTranscribing)
+            .disabled(!appState.isReady || isTranscribing)
 
             if isRecording {
                 HStack {
@@ -124,10 +125,17 @@ struct LiveTranscriptionView: View {
 
     private var resultSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if let time = finalTranscriptionTime {
-                Text(String(format: "Transcribed in %.1f seconds", time))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+            if let wallTime = finalTranscriptionTime {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(String(format: "Total time: %.2f seconds", wallTime))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    if let whisperTime = actualWhisperKitTime {
+                        Text(String(format: "WhisperKit time: %.2f seconds", whisperTime))
+                            .font(.caption)
+                            .foregroundStyle(.blue)
+                    }
+                }
             }
 
             if !transcriptionResult.isEmpty {
@@ -168,6 +176,7 @@ struct LiveTranscriptionView: View {
         errorMessage = ""
         transcriptionResult = ""
         finalTranscriptionTime = nil
+        actualWhisperKitTime = nil
 
         do {
             try await appState.recorder.startRecording()
@@ -191,6 +200,7 @@ struct LiveTranscriptionView: View {
         do {
             let result = try await appState.voiceService.transcribe(audioURL: audioURL)
             transcriptionResult = result.text
+            actualWhisperKitTime = result.duration
         } catch {
             errorMessage = "Transcription failed: \(error.localizedDescription)"
         }

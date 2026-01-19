@@ -43,10 +43,10 @@ struct ExamplesHomeView: View {
 
     private var modelStatusSection: some View {
         HStack {
-            if appState.isModelLoading {
+            if appState.isModelLoading || appState.isWarmingUp {
                 ProgressView()
                     .controlSize(.small)
-            } else if appState.isModelLoaded {
+            } else if appState.isReady {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
             } else {

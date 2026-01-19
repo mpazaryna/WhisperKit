@@ -32,8 +32,8 @@ struct SettingsView: View {
                 statusRow(
                     title: "Status",
                     value: appState.modelStatusText,
-                    icon: appState.isModelLoaded ? "checkmark.circle.fill" : "circle",
-                    iconColor: appState.isModelLoaded ? .green : .secondary
+                    icon: appState.isReady ? "checkmark.circle.fill" : (appState.isModelLoading || appState.isWarmingUp ? "arrow.circlepath" : "circle"),
+                    iconColor: appState.isReady ? .green : (appState.isModelLoading || appState.isWarmingUp ? .orange : .secondary)
                 )
 
                 Divider()
@@ -67,7 +67,7 @@ struct SettingsView: View {
             .background(.regularMaterial)
             .clipShape(RoundedRectangle(cornerRadius: 12))
 
-            if !appState.isModelLoaded && !appState.isModelLoading {
+            if !appState.isReady && !appState.isModelLoading && !appState.isWarmingUp {
                 Button {
                     Task { await appState.loadModelIfNeeded() }
                 } label: {

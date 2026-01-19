@@ -7,6 +7,9 @@
 
 import AVFoundation
 import Foundation
+import os.log
+
+private let logger = Logger(subsystem: "com.voicekitlab", category: "recorder")
 
 enum AudioRecorderError: Error {
     case recordingFailed(String)
@@ -54,6 +57,9 @@ class AudioRecorderService: NSObject {
 
         isRecording = true
         recordingURL = url
+
+        logger.info("🎙️ Recording started - file: \(url.lastPathComponent)")
+        print("[Recorder] 🎙️ Recording started - file: \(url.lastPathComponent)")
     }
 
     func stopRecording() -> URL? {
@@ -63,6 +69,15 @@ class AudioRecorderService: NSObject {
         #if os(iOS)
         try? AVAudioSession.sharedInstance().setActive(false)
         #endif
+
+        // Log recording file info
+        if let url = recordingURL {
+            if let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+               let fileSize = attrs[.size] as? Int64 {
+                logger.info("📁 Recording stopped - file: \(url.lastPathComponent), size: \(fileSize) bytes")
+                print("[Recorder] 📁 Recording stopped - file: \(url.lastPathComponent), size: \(fileSize) bytes")
+            }
+        }
 
         return recordingURL
     }

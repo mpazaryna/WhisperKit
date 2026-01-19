@@ -12,10 +12,17 @@ struct ContentView: View {
     @Environment(AppState.self) private var appState
 
     var body: some View {
-        NavigationSplitView {
-            SidebarView(selection: $selectedItem)
-        } detail: {
-            detailView
+        ZStack(alignment: .top) {
+            NavigationSplitView {
+                SidebarView(selection: $selectedItem)
+            } detail: {
+                detailView
+            }
+
+            // Non-blocking warm-up banner
+            WarmupBannerView()
+                .animation(.easeInOut(duration: 0.3), value: appState.isModelLoading)
+                .animation(.easeInOut(duration: 0.3), value: appState.isWarmingUp)
         }
         .task {
             await appState.loadModelIfNeeded()
