@@ -17,6 +17,12 @@ struct EngineComparisonView: View {
     @State private var appleResult = ""
     @State private var errorMessage = ""
 
+    // Timer state
+    @State private var transcriptionStartTime: Date?
+    @State private var elapsedTime: TimeInterval = 0
+    @State private var finalTranscriptionTime: TimeInterval?
+    @State private var timer: Timer?
+
     var body: some View {
         VStack(spacing: 24) {
             headerSection
@@ -90,10 +96,15 @@ struct EngineComparisonView: View {
             }
 
             if isTranscribing {
-                HStack {
-                    ProgressView()
-                    Text("Transcribing...")
-                        .foregroundStyle(.secondary)
+                VStack(spacing: 8) {
+                    HStack {
+                        ProgressView()
+                        Text("Transcribing...")
+                            .foregroundStyle(.secondary)
+                    }
+                    Text(String(format: "%.1f seconds", elapsedTime))
+                        .font(.title2.monospacedDigit())
+                        .foregroundStyle(.blue)
                 }
             }
 
@@ -109,6 +120,12 @@ struct EngineComparisonView: View {
 
     private var resultsSection: some View {
         VStack(spacing: 16) {
+            if let time = finalTranscriptionTime {
+                Text(String(format: "Transcribed in %.1f seconds", time))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
             if !whisperResult.isEmpty || !appleResult.isEmpty {
                 HStack(alignment: .top, spacing: 16) {
                     resultCard(
@@ -157,6 +174,7 @@ struct EngineComparisonView: View {
         errorMessage = ""
         whisperResult = ""
         appleResult = ""
+        finalTranscriptionTime = nil
 
         do {
             try await appState.recorder.startRecording()
@@ -172,7 +190,7 @@ struct EngineComparisonView: View {
         }
 
         isTranscribing = true
-        defer { isTranscribing = false }
+        startTimer()
 
         // Run both transcriptions in parallel
         async let whisperTask = transcribeWithWhisper(url: audioURL)
@@ -180,6 +198,32 @@ struct EngineComparisonView: View {
 
         whisperResult = await whisperTask
         appleResult = await appleTask
+
+        stopTimer()
+        isTranscribing = false
+    }
+
+    // MARK: - Timer
+
+    private func startTimer() {
+        transcriptionStartTime = Date()
+        elapsedTime = 0
+
+        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            if let startTime = transcriptionStartTime {
+                elapsedTime = Date().timeIntervalSince(startTime)
+            }
+        }
+    }
+
+    private func stopTimer() {
+        timer?.invalidate()
+        timer = nil
+
+        if let startTime = transcriptionStartTime {
+            finalTranscriptionTime = Date().timeIntervalSince(startTime)
+        }
+        transcriptionStartTime = nil
     }
 
     private func transcribeWithWhisper(url: URL) async -> String {
