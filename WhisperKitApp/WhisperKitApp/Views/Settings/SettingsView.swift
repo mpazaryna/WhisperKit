@@ -111,6 +111,31 @@ struct SettingsView: View {
                     iconColor: .green
                 )
 
+            }
+            .padding()
+            .background(.regularMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+
+            // VoiceKit section
+            VStack(alignment: .leading, spacing: 12) {
+                Text("VoiceKit acts as a facade layer, providing a unified API for multiple transcription providers including WhisperKit and Apple Speech.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Divider()
+
+                Link(destination: URL(string: "https://github.com/mpazaryna/VoiceKit")!) {
+                    HStack {
+                        Image(systemName: "link")
+                            .foregroundStyle(.blue)
+                        Text("VoiceKit on GitHub")
+                            .foregroundStyle(.primary)
+                        Spacer()
+                        Image(systemName: "arrow.up.right")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+
                 Divider()
 
                 Link(destination: URL(string: "https://github.com/argmaxinc/WhisperKit")!) {
