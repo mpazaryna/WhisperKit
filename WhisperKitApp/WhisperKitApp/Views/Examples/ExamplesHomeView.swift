@@ -95,14 +95,6 @@ struct ExamplesHomeView: View {
             }
 
             FeatureCard(
-                title: "Medical Terms",
-                description: "Test chiropractic vocabulary accuracy",
-                icon: "stethoscope"
-            ) {
-                selection = .examples
-            }
-
-            FeatureCard(
                 title: "Model Info",
                 description: "View loaded model details",
                 icon: "info.circle"
