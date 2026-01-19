@@ -16,6 +16,12 @@ struct LiveTranscriptionView: View {
     @State private var transcriptionResult = ""
     @State private var errorMessage = ""
 
+    // Timer state
+    @State private var transcriptionStartTime: Date?
+    @State private var elapsedTime: TimeInterval = 0
+    @State private var finalTranscriptionTime: TimeInterval?
+    @State private var timer: Timer?
+
     var body: some View {
         VStack(spacing: 24) {
             headerSection
@@ -94,10 +100,15 @@ struct LiveTranscriptionView: View {
             }
 
             if isTranscribing {
-                HStack {
-                    ProgressView()
-                    Text("Transcribing...")
-                        .foregroundStyle(.secondary)
+                VStack(spacing: 8) {
+                    HStack {
+                        ProgressView()
+                        Text("Transcribing...")
+                            .foregroundStyle(.secondary)
+                    }
+                    Text(String(format: "%.1f seconds", elapsedTime))
+                        .font(.title2.monospacedDigit())
+                        .foregroundStyle(.blue)
                 }
             }
 
@@ -113,6 +124,12 @@ struct LiveTranscriptionView: View {
 
     private var resultSection: some View {
         VStack(alignment: .leading, spacing: 12) {
+            if let time = finalTranscriptionTime {
+                Text(String(format: "Transcribed in %.1f seconds", time))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+
             if !transcriptionResult.isEmpty {
                 HStack {
                     Text("Transcription")
@@ -150,6 +167,7 @@ struct LiveTranscriptionView: View {
     private func startRecording() async {
         errorMessage = ""
         transcriptionResult = ""
+        finalTranscriptionTime = nil
 
         do {
             try await appState.recorder.startRecording()
@@ -168,7 +186,7 @@ struct LiveTranscriptionView: View {
         }
 
         isTranscribing = true
-        defer { isTranscribing = false }
+        startTimer()
 
         do {
             let result = try await appState.voiceService.transcribe(audioURL: audioURL)
@@ -176,6 +194,32 @@ struct LiveTranscriptionView: View {
         } catch {
             errorMessage = "Transcription failed: \(error.localizedDescription)"
         }
+
+        stopTimer()
+        isTranscribing = false
+    }
+
+    // MARK: - Timer
+
+    private func startTimer() {
+        transcriptionStartTime = Date()
+        elapsedTime = 0
+
+        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+            if let startTime = transcriptionStartTime {
+                elapsedTime = Date().timeIntervalSince(startTime)
+            }
+        }
+    }
+
+    private func stopTimer() {
+        timer?.invalidate()
+        timer = nil
+
+        if let startTime = transcriptionStartTime {
+            finalTranscriptionTime = Date().timeIntervalSince(startTime)
+        }
+        transcriptionStartTime = nil
     }
 
     private func copyToClipboard() {
