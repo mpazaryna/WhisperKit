@@ -7,6 +7,7 @@
 
 import Foundation
 import Testing
+import VoiceKit
 @testable import WhisperKitApp
 
 // MARK: - Closed Loop Transcription Tests
@@ -60,9 +61,10 @@ struct ClosedLoopTranscriptionTests {
         let fixture = try AudioFixtureLoader.load(named: fixtureName)
 
         let startTime = Date()
-        let transcription = try await service.transcribe(audioURL: fixture.audioURL)
+        let result = try await service.transcribe(audioURL: fixture.audioURL)
         let elapsed = Date().timeIntervalSince(startTime)
 
+        let transcription = result.text
         let accuracy = fixture.calculateAccuracy(transcription: transcription)
 
         // Print detailed report
@@ -129,8 +131,9 @@ struct AllFixturesTranscriptionTests {
 
         for fixture in fixtures {
             let startTime = Date()
-            let transcription = try await service.transcribe(audioURL: fixture.audioURL)
+            let result = try await service.transcribe(audioURL: fixture.audioURL)
             let elapsed = Date().timeIntervalSince(startTime)
+            let transcription = result.text
             let accuracy = fixture.calculateAccuracy(transcription: transcription)
 
             results.append((fixture, transcription, accuracy, elapsed))
