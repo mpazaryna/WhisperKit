@@ -1,5 +1,5 @@
 //
-//  TranscriptionComparisonView.swift
+//  EngineComparisonView.swift
 //  WhisperKitApp
 //
 //  Compare WhisperKit vs Apple Speech transcription
@@ -9,16 +9,10 @@ import Speech
 import SwiftUI
 import VoiceKit
 
-struct TranscriptionComparisonView: View {
+struct EngineComparisonView: View {
+    @Environment(AppState.self) private var appState
 
-    @State private var recorder = AudioRecorderService()
-    @State private var whisperService = VoiceTranscriptionService()
-    @State private var appleService = AppleSpeechService()
-
-    @State private var isLoading = false
-    @State private var isModelLoaded = false
     @State private var isTranscribing = false
-
     @State private var whisperResult = ""
     @State private var appleResult = ""
     @State private var errorMessage = ""
@@ -31,9 +25,7 @@ struct TranscriptionComparisonView: View {
             Spacer()
         }
         .padding()
-        .task {
-            await loadModel()
-        }
+        .navigationTitle("Engine Comparison")
     }
 
     // MARK: - Header
@@ -44,15 +36,25 @@ struct TranscriptionComparisonView: View {
                 .font(.largeTitle)
                 .fontWeight(.bold)
 
-            if isLoading {
+            modelStatus
+        }
+    }
+
+    private var modelStatus: some View {
+        Group {
+            if appState.isModelLoading {
                 HStack {
                     ProgressView()
                     Text("Loading WhisperKit model...")
                         .foregroundStyle(.secondary)
                 }
-            } else if isModelLoaded {
+            } else if appState.isModelLoaded {
                 Label("Model Ready", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
+            } else if let error = appState.modelError {
+                Text(error)
+                    .foregroundStyle(.red)
+                    .font(.caption)
             }
         }
     }
@@ -65,19 +67,19 @@ struct TranscriptionComparisonView: View {
                 Task { await toggleRecording() }
             } label: {
                 Label(
-                    recorder.isRecording ? "Stop Recording" : "Start Recording",
-                    systemImage: recorder.isRecording ? "stop.circle.fill" : "mic.circle.fill"
+                    appState.recorder.isRecording ? "Stop Recording" : "Start Recording",
+                    systemImage: appState.recorder.isRecording ? "stop.circle.fill" : "mic.circle.fill"
                 )
                 .font(.title2)
                 .padding()
                 .frame(maxWidth: .infinity)
-                .background(recorder.isRecording ? Color.red : Color.blue)
+                .background(appState.recorder.isRecording ? Color.red : Color.blue)
                 .foregroundStyle(.white)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
             }
-            .disabled(!isModelLoaded || isTranscribing)
+            .disabled(!appState.isModelLoaded || isTranscribing)
 
-            if recorder.isRecording {
+            if appState.recorder.isRecording {
                 HStack {
                     Circle()
                         .fill(.red)
@@ -143,20 +145,8 @@ struct TranscriptionComparisonView: View {
 
     // MARK: - Actions
 
-    private func loadModel() async {
-        isLoading = true
-        defer { isLoading = false }
-
-        do {
-            try await whisperService.loadModel()
-            isModelLoaded = true
-        } catch {
-            errorMessage = "Failed to load model: \(error.localizedDescription)"
-        }
-    }
-
     private func toggleRecording() async {
-        if recorder.isRecording {
+        if appState.recorder.isRecording {
             await stopAndTranscribe()
         } else {
             await startRecording()
@@ -169,14 +159,14 @@ struct TranscriptionComparisonView: View {
         appleResult = ""
 
         do {
-            try await recorder.startRecording()
+            try await appState.recorder.startRecording()
         } catch {
             errorMessage = "Recording failed: \(error.localizedDescription)"
         }
     }
 
     private func stopAndTranscribe() async {
-        guard let audioURL = recorder.stopRecording() else {
+        guard let audioURL = appState.recorder.stopRecording() else {
             errorMessage = "No recording available"
             return
         }
@@ -194,7 +184,7 @@ struct TranscriptionComparisonView: View {
 
     private func transcribeWithWhisper(url: URL) async -> String {
         do {
-            let result = try await whisperService.transcribe(audioURL: url)
+            let result = try await appState.voiceService.transcribe(audioURL: url)
             return result.text
         } catch {
             return "Error: \(error.localizedDescription)"
@@ -202,13 +192,13 @@ struct TranscriptionComparisonView: View {
     }
 
     private func transcribeWithApple(url: URL) async -> String {
-        let status = await appleService.requestAuthorization()
+        let status = await appState.appleService.requestAuthorization()
         guard status == .authorized else {
             return "Not authorized"
         }
 
         do {
-            return try await appleService.transcribe(audioURL: url)
+            return try await appState.appleService.transcribe(audioURL: url)
         } catch {
             return "Error: \(error.localizedDescription)"
         }
@@ -216,5 +206,8 @@ struct TranscriptionComparisonView: View {
 }
 
 #Preview {
-    TranscriptionComparisonView()
+    NavigationStack {
+        EngineComparisonView()
+            .environment(AppState.shared)
+    }
 }
