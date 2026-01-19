@@ -6,9 +6,7 @@
 //
 
 import AVFoundation
-import Combine
 import Foundation
-import SwiftUI
 
 enum AudioRecorderError: Error {
     case recordingFailed(String)
@@ -16,12 +14,13 @@ enum AudioRecorderError: Error {
 }
 
 @MainActor
-class AudioRecorderService: NSObject, ObservableObject {
+@Observable
+class AudioRecorderService: NSObject {
 
-    // MARK: - Published State
+    // MARK: - Observable State
 
-    @Published var isRecording = false
-    @Published var recordingURL: URL?
+    var isRecording = false
+    var recordingURL: URL?
 
     // MARK: - Private
 
