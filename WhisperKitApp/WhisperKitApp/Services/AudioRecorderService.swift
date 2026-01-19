@@ -6,9 +6,10 @@
 //
 
 import AVFoundation
-import Combine
 import Foundation
-import SwiftUI
+import os.log
+
+private let logger = Logger(subsystem: "com.voicekitlab", category: "recorder")
 
 enum AudioRecorderError: Error {
     case recordingFailed(String)
@@ -16,12 +17,13 @@ enum AudioRecorderError: Error {
 }
 
 @MainActor
-class AudioRecorderService: NSObject, ObservableObject {
+@Observable
+class AudioRecorderService: NSObject {
 
-    // MARK: - Published State
+    // MARK: - Observable State
 
-    @Published var isRecording = false
-    @Published var recordingURL: URL?
+    var isRecording = false
+    var recordingURL: URL?
 
     // MARK: - Private
 
@@ -55,6 +57,9 @@ class AudioRecorderService: NSObject, ObservableObject {
 
         isRecording = true
         recordingURL = url
+
+        logger.info("🎙️ Recording started - file: \(url.lastPathComponent)")
+        print("[Recorder] 🎙️ Recording started - file: \(url.lastPathComponent)")
     }
 
     func stopRecording() -> URL? {
@@ -64,6 +69,15 @@ class AudioRecorderService: NSObject, ObservableObject {
         #if os(iOS)
         try? AVAudioSession.sharedInstance().setActive(false)
         #endif
+
+        // Log recording file info
+        if let url = recordingURL {
+            if let attrs = try? FileManager.default.attributesOfItem(atPath: url.path),
+               let fileSize = attrs[.size] as? Int64 {
+                logger.info("📁 Recording stopped - file: \(url.lastPathComponent), size: \(fileSize) bytes")
+                print("[Recorder] 📁 Recording stopped - file: \(url.lastPathComponent), size: \(fileSize) bytes")
+            }
+        }
 
         return recordingURL
     }
